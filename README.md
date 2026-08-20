@@ -1,5 +1,7 @@
 # LunchSpend
 
+[![CI](https://github.com/piyoryyta/lunchSpend/actions/workflows/ci.yml/badge.svg)](https://github.com/piyoryyta/lunchSpend/actions/workflows/ci.yml)
+
 食費・ランチ支出管理 Android アプリ。仕様は [SPEC.md](./SPEC.md) を参照。
 
 ## 技術スタック
@@ -49,4 +51,20 @@ app/src/main/java/com/piyoryyta/lunchspend/
 このセットアップを行った開発コンテナには Android SDK が無く、`dl.google.com` への
 アウトバウンドアクセスもポリシーでブロックされているため、`./gradlew build` の実行検証は
 行えていない。Android Studio、または Android SDK とフルインターネットアクセスのある CI で
-ビルド確認すること。
+ビルド確認すること (下記 CI で自動的に検証される)。
+
+## CI
+
+`.github/workflows/ci.yml` で GitHub Actions による CI を構成している。push / PR ごとに以下を実行する:
+
+1. Gradle Wrapper の検証 (`gradle/actions/wrapper-validation`)
+2. Android Lint (`./gradlew lintDebug`)
+3. ユニットテスト (`./gradlew testDebugUnitTest`、Robolectric)
+4. デバッグAPKのビルド (`./gradlew assembleDebug`)
+
+Lint/テストレポートとデバッグAPKはワークフローのアーティファクトとしてアップロードされる。
+
+個人利用の単一ユーザーアプリという性質上、署名済みリリースビルドや Google Play への自動配信 (CD) は
+現時点では対象外としている。将来 Play 配信や GitHub Release への添付が必要になった場合は、
+署名鍵・Play Console サービスアカウント等を GitHub Secrets に登録した上でリリース用ワークフローを
+追加すること。
