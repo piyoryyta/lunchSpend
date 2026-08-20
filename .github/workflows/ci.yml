@@ -1,13 +1,17 @@
 name: CI
 
 on:
+  # Feature-branch pushes are validated via the pull_request trigger below;
+  # only re-verify on pushes to the trunk branch (post-merge) to avoid running
+  # CI twice for the same commit while a PR is open.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 # Cancel superseded runs on the same branch/PR to save CI time.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
