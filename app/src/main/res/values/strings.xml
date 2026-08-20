@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">LunchSpend</string>
+
+    <!-- Screen titles (SPEC.md 5.1) -->
+    <string name="screen_home">今日の精算</string>
+    <string name="screen_product_list">商品一覧</string>
+    <string name="screen_product_detail">商品詳細</string>
+    <string name="screen_purchase">購入登録</string>
+    <string name="screen_settlement_entry">精算入力</string>
+    <string name="screen_daily_detail">日次詳細</string>
+    <string name="screen_monthly_summary">月次サマリー</string>
+    <string name="screen_inventory">在庫一覧</string>
+    <string name="screen_purchase_history">購入履歴</string>
+</resources>
