@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Room DB export/import is a future extension (SPEC.md 6). For now, allow the
+   default Android Auto Backup to include the app's Room database file.
+-->
+<full-backup-content>
+    <include domain="database" path="." />
+</full-backup-content>
