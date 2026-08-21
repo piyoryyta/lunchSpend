@@ -25,10 +25,16 @@ class LunchSpendApplication : Application() {
     }
 
     val stockRepository: StockRepository by lazy {
-        StockRepository(database.stockLotDao(), database.stockConsumptionDao(), database.productDao())
+        StockRepository(database, database.stockLotDao(), database.productDao())
     }
 
     val settlementRepository: SettlementRepository by lazy {
-        SettlementRepository(database.dailyRecordDao(), database.settlementLineItemDao())
+        SettlementRepository(
+            database,
+            database.dailyRecordDao(),
+            database.settlementLineItemDao(),
+            database.stockConsumptionDao(),
+            stockRepository,
+        )
     }
 }
