@@ -90,7 +90,13 @@ object FifoConsumptionCalculator {
             totalCostMilliYen = totalMilliYen,
         )
     }
-
-    /** 非負の n, d (d > 0) に対する四捨五入(round-half-up)除算。 */
-    private fun roundHalfUpDiv(n: Long, d: Long): Long = (2 * n + d) / (2 * d)
 }
+
+/**
+ * 非負の n, d (d > 0) に対する四捨五入(round-half-up)除算。
+ *
+ * ファイルトップレベルの private 関数にすることで、[FifoConsumptionPlan] と
+ * [FifoConsumptionCalculator] の両方から参照できるようにしている
+ * (object のメンバーにすると同ファイル内の他クラスからは見えない)。
+ */
+private fun roundHalfUpDiv(n: Long, d: Long): Long = (2 * n + d) / (2 * d)
