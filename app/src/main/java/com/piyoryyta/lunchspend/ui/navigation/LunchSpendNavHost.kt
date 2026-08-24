@@ -9,20 +9,29 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.piyoryyta.lunchspend.R
 import com.piyoryyta.lunchspend.ui.common.PlaceholderScreen
+import com.piyoryyta.lunchspend.ui.home.HomeScreen
+import com.piyoryyta.lunchspend.ui.product.ProductListScreen
+import com.piyoryyta.lunchspend.ui.purchase.PurchaseScreen
 
 /**
  * アプリ全体のナビゲーション (SPEC.md 5.1 の9画面)。
  *
- * 現時点では各画面はプレースホルダーであり、機能実装時に個別のComposableへ置き換える。
+ * ホーム(今日の精算)・商品一覧・購入登録の3画面は実装済み。それ以外はプレースホルダーであり、
+ * 機能実装時に個別のComposableへ置き換える。
  */
 @Composable
 fun LunchSpendNavHost(navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = Destination.Home.route) {
         composable(Destination.Home.route) {
-            PlaceholderScreen(title = stringRes(R.string.screen_home))
+            HomeScreen(onNavigateToProducts = { navController.navigate(Destination.ProductList.route) })
         }
         composable(Destination.ProductList.route) {
-            PlaceholderScreen(title = stringRes(R.string.screen_product_list))
+            ProductListScreen(
+                onBack = { navController.popBackStack() },
+                onSelectProduct = { productId ->
+                    navController.navigate(Destination.Purchase.createRoute(productId))
+                },
+            )
         }
         composable(
             route = Destination.ProductDetail.route,
@@ -38,8 +47,13 @@ fun LunchSpendNavHost(navController: NavHostController = rememberNavController()
                     defaultValue = -1L
                 },
             ),
-        ) {
-            PlaceholderScreen(title = stringRes(R.string.screen_purchase))
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getLong("productId") ?: -1L
+            PurchaseScreen(
+                preselectedProductId = productId.takeIf { it >= 0 },
+                onSaved = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(
             route = Destination.SettlementEntry.route,
