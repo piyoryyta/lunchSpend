@@ -1,17 +1,20 @@
 package com.piyoryyta.lunchspend.data.repository
 
+import androidx.room.withTransaction
 import com.piyoryyta.lunchspend.data.dao.ProductDao
-import com.piyoryyta.lunchspend.data.dao.StockConsumptionDao
 import com.piyoryyta.lunchspend.data.dao.StockLotDao
+import com.piyoryyta.lunchspend.data.db.LunchSpendDatabase
 import com.piyoryyta.lunchspend.data.entity.StockLot
+import com.piyoryyta.lunchspend.domain.fifo.FifoConsumptionCalculator
+import com.piyoryyta.lunchspend.domain.fifo.FifoConsumptionPlan
 import kotlinx.coroutines.flow.Flow
 
 /**
  * 購入 (仕入れ) と在庫ロットの管理 (SPEC.md 2.2, 4.8)。
  */
 class StockRepository(
+    private val database: LunchSpendDatabase,
     private val stockLotDao: StockLotDao,
-    private val stockConsumptionDao: StockConsumptionDao,
     private val productDao: ProductDao,
 ) {
     fun observeAllLots(): Flow<List<StockLot>> = stockLotDao.observeAll()
@@ -67,6 +70,37 @@ class StockRepository(
         stockLotDao.delete(lot)
     }
 
-    // TODO(SPEC.md 4.1/4.2/4.4): FIFO消費本体 (consumeForSettlement) は精算機能の実装時に
-    // SettlementRepository と合わせて追加する。ここでは購入・在庫照会のみを提供する。
+    /**
+     * 商品を FIFO で消費し、StockLot.remainingPieces を更新する (SPEC.md 4.1, 4.2, 4.4)。
+     *
+     * 在庫だけで賄えない場合はブロックせず、不足分は商品の現在の基準価格ベースで計上できるよう
+     * [FifoConsumptionPlan.shortagePieces] / totalCost に反映して返す (4.4)。
+     * StockConsumption / SettlementLineItem の作成は行わない (settlementLineItemId がまだ存在しないため) —
+     * これは呼び出し側の [SettlementRepository.addProductLineItem] の責務。
+     *
+     * [database] 上でトランザクションを開始する。同一 database インスタンス上で呼び出し側が既に
+     * withTransaction 中であれば、その外側トランザクションにネストして合流する (Room の仕様)。
+     */
+    suspend fun consumeFifo(productId: Long, quantity: Int): FifoConsumptionPlan {
+        require(quantity > 0) { "quantity must be > 0" }
+        return database.withTransaction {
+            val product = requireNotNull(productDao.getById(productId)) {
+                "Product $productId not found"
+            }
+            val lots = stockLotDao.getConsumableLotsForFifo(productId)
+            val plan = FifoConsumptionCalculator.plan(
+                lots = lots,
+                quantity = quantity,
+                fallbackUnitPrice = product.defaultUnitPrice,
+                fallbackUnitsPerPackage = product.unitsPerPackage,
+            )
+
+            val lotsById = lots.associateBy { it.id }
+            plan.lotConsumptions.forEach { consumption ->
+                val lot = lotsById.getValue(consumption.stockLotId)
+                stockLotDao.update(lot.copy(remainingPieces = lot.remainingPieces - consumption.consumedPieces))
+            }
+            plan
+        }
+    }
 }
